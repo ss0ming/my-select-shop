@@ -4,6 +4,7 @@ import com.ss0ming.myselectshop.dto.ProductMypriceRequestDto;
 import com.ss0ming.myselectshop.dto.ProductRequestDto;
 import com.ss0ming.myselectshop.dto.ProductResponseDto;
 import com.ss0ming.myselectshop.entity.Product;
+import com.ss0ming.myselectshop.entity.User;
 import com.ss0ming.myselectshop.naver.dto.ItemDto;
 import com.ss0ming.myselectshop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +22,21 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public ProductResponseDto createProduct(ProductRequestDto requestDto) {
-        Product product = productRepository.save(new Product(requestDto));
+    @Transactional
+    public ProductResponseDto createProduct(ProductRequestDto requestDto, User user) {
+        Product product = productRepository.save(new Product(requestDto, user));
         return new ProductResponseDto(product);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponseDto> getProducts(User user) {
+        List<Product> productList = productRepository.findALlByUser(user);
+        List<ProductResponseDto> responseDtoList = new ArrayList<>();
+
+        for (Product product : productList) {
+            responseDtoList.add(new ProductResponseDto(product));
+        }
+        return responseDtoList;
     }
 
     @Transactional
@@ -42,8 +55,16 @@ public class ProductService {
         return new ProductResponseDto(product);
     }
 
+    @Transactional
+    public void updateBySearch(Long id, ItemDto itemDto) {
+        Product product = productRepository.findById(id).orElseThrow(
+                () -> new NullPointerException("해당 상품은 존재하지 않습니다.")
+        );
+        product.updateByItemDto(itemDto);
+    }
+
     @Transactional(readOnly = true)
-    public List<ProductResponseDto> getProducts() {
+    public List<ProductResponseDto> getAllProducts() {
         List<Product> productList = productRepository.findAll();
         List<ProductResponseDto> responseDtoList = new ArrayList<>();
 
@@ -51,13 +72,5 @@ public class ProductService {
             responseDtoList.add(new ProductResponseDto(product));
         }
         return responseDtoList;
-    }
-
-    @Transactional
-    public void updateBySearch(Long id, ItemDto itemDto) {
-        Product product = productRepository.findById(id).orElseThrow(
-                () -> new NullPointerException("해당 상품은 존재하지 않습니다.")
-        );
-        product.updateByItemDto(itemDto);
     }
 }
